@@ -53,9 +53,9 @@ public class Writer implements Serializable {
    private final static SimpleDateFormat datetimeFormat   = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
    private final static SimpleDateFormat timeFormat       = new SimpleDateFormat("hh:mm:ss");
 
-   private String[] section_fields = {"type","name", "definition", "repository", "mapping", "link",
+   private String[] section_fields = {"type","name", "definition", "repository", "link",
            "include", "reference" };
-   private String[] property_fields = {"name", "definition", "dependency", "dependencyValue", "mapping"};
+   private String[] property_fields = {"name", "definition", "dependency", "dependencyValue"};
 
    private String[] value_fields = {"content", "type", "unit", "uncertainty", "definition", "reference",
            "filename", "encoder", "checksum"};
@@ -328,7 +328,7 @@ public class Writer implements Serializable {
     *
     * @param parent - {@link org.jdom2.Element} the parent Element.
     * @param name - {@link java.lang.String} the new elements name.
-    * @param content - {@link java.util.Objects} the content.
+    * @param content - {@link Object} the content.
     */
    private void addElement(Element parent, String name, Object content) {
       if (content == null || content.toString().isEmpty()) {

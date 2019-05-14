@@ -32,16 +32,20 @@ import java.util.*;
  * <ol>
  * <li>name - mandatory, the name of the property.</li>
  * <li>value - mandatory, its value.</li>
+ * <li>dtype - the data type of the value(s), will be automatically inferred if not provided</li>
+ * <li>unit - optional, the unit of the stored value(s)</li>
+ * <li>reference - optional, a reference (e.g. an URL) to an external definition of the value.</li>
+ * <li>value_origin- optional,  Reference where the value originated from e.g. a file name.</li>
  * <li>definition - optional, a descriptive text that defines the meaning of this property.</li>
  * <li>dependency - optional, mainly used in the terminologies to help GUIs and editors to assist the user entering
  * values. The dependency defines if this property should occur only under certain conditions. I.e. this property
  * occurs, makes sense, only if there also is a certain other property.</li>
  * <li>dependencyValue - optional, as the dependency entry: defines that this property is commonly depends on a certain
  * parent property that contains a specific parent value.</li>
- * <li>mapping - optional</li>
+ * <li>oid - mandatory, object id, will be automatically created.</li>
  * </ol>
  *
- * @since 08.2009
+ * @since 08.2009 - 2019
  * @author Jan Grewe, Christine Seitz
  *
  */
@@ -51,12 +55,10 @@ public class Property implements Serializable, Cloneable, TreeNode {
    private static final long     serialVersionUID = 147L;
    private String                name             = "", dependency = "",
          dependencyValue = "", definition = "";
-   private URL                   mappingURL;
    private Section               parentSection    = null;
    private Vector<Value>         values;
-   public static Object[]        columns          = { "name", "reference", "value", "uncertainty",
-                                                  "unit",
-                                                  "type", "filename",
+   public static Object[]        columns          = {"name", "reference", "value", "uncertainty",
+                                                  "unit", "type", "filename",
                                                   "valueDefinition", "propertyDefinition",
                                                   "dependency", "dependencyValue" };
    public static int             MATCH_ERROR      = -1, MATCH_NO = 0,
@@ -103,9 +105,8 @@ public class Property implements Serializable, Cloneable, TreeNode {
     * @param type {@link String}
     * @throws Exception
     */
-   public Property(String name, Object value, String unit, Object uncertainty, String type)
-                                                                                           throws Exception {
-      this(name, null, value, unit, uncertainty, type, null, null, null, null, null, null);
+   public Property(String name, Object value, String unit, Object uncertainty, String type) throws Exception {
+      this(name, null, value, unit, uncertainty, type, null, null, null, null, null);
    }
 
 
@@ -113,7 +114,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
     * Creates a Property from a Vector containing the property data in the following sequence:
     * "name","reference","value","unit","uncertainty","type","fileName","valueDefinition",
     * "propertyDefinition",
-    * "dependency","dependencyValue", "synonym","mappingURL"
+    * "dependency","dependencyValue"
     *
     * @param data {@link Vector} of Objects that contains the data in the sequence as the {@link Property}.columns
     * @throws Exception
@@ -123,7 +124,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
             .get(4), (String) data
             .get(5), (String) data.get(6), (String) data.get(8), (String) data.get(7),
             (String) data.get(9),
-            (String) data.get(10), (URL) data.get(11));
+            (String) data.get(10));
    }
 
 
@@ -135,14 +136,12 @@ public class Property implements Serializable, Cloneable, TreeNode {
     * @param definition {@link String}
     * @param dependency {@link String}
     * @param dependencyValue {@link String}
-    * @param mapping {@link URL}
     * @throws Exception
     */
    public Property(String name, Vector<Value> values, String definition, String dependency,
-                   String dependencyValue,
-                   URL mapping) throws Exception {
+                   String dependencyValue) throws Exception {
       try {
-         initialize(name, values, definition, dependency, dependencyValue, mapping);
+         initialize(name, values, definition, dependency, dependencyValue);
       } catch (Exception l) {
          System.out.println("Could not create property: " + l.getLocalizedMessage());
       }
@@ -164,14 +163,11 @@ public class Property implements Serializable, Cloneable, TreeNode {
     * @param valueDefinition {@link String}
     * @param dependency {@link String}
     * @param dependencyValue {@link String}
-    * @param mapping {@link URL}
     * @throws Exception
     */
    public Property(String name, String reference, Object value, String unit, Object uncertainty,
-                   String type,
-                   String filename, String definition, String valueDefinition,
-                   String dependency,
-                   String dependencyValue, URL mapping) throws Exception {
+                   String type, String filename, String definition, String valueDefinition,
+                   String dependency, String dependencyValue) throws Exception {
       Vector<Value> theValues = new Vector<Value>();
       if (type == null || type.isEmpty()) {
          type = Value.inferOdmlType(value);
@@ -179,7 +175,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
       try {
          theValues.add(new Value(value, unit, uncertainty, type, filename,
                valueDefinition, reference));
-         initialize(name, theValues, definition, dependency, dependencyValue, mapping);
+         initialize(name, theValues, definition, dependency, dependencyValue);
       } catch (Exception l) {
          System.out.println("Could not create property: " + l.getLocalizedMessage());
       }
@@ -201,14 +197,11 @@ public class Property implements Serializable, Cloneable, TreeNode {
     * @param definition {@link String} The property definition
     * @param dependency {@link String} Property dependence.
     * @param dependencyValue {@link String} the value the dependence Property should have.
-    * @param mapping {@link URL} A url to a terminology to which this property should be mapped, if needed.
     * @throws Exception
     */
    public Property(String name, Vector<Object> values, Vector<String> references, String unit,
-                   Vector<Object> uncertainties,
-                   String type, Vector<String> fileNames, Vector<String> valueDefinitions,
-                   String definition,
-                   String dependency, String dependencyValue, URL mapping) throws Exception {
+                   Vector<Object> uncertainties, String type, Vector<String> fileNames, Vector<String> valueDefinitions,
+                   String definition, String dependency, String dependencyValue) throws Exception {
       String message = "";
       if (name == null || name.isEmpty()) {
          message = "Could not create property! 'name' is mandatory entry and must not be null or empty!";
@@ -241,7 +234,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
             System.out.println("Error during creation of value: " + e.getLocalizedMessage());
          }
       }
-      initialize(name, theValues, definition, dependency, dependencyValue, mapping);
+      initialize(name, theValues, definition, dependency, dependencyValue);
    }
 
 
@@ -254,11 +247,10 @@ public class Property implements Serializable, Cloneable, TreeNode {
     * @param definition {@link String}the definition of the property
     * @param dependency {@link String}
     * @param dependencyValue {@link String}
-    * @param mapping {@link URL}
     * @throws Exception
     */
    private void initialize(String name, Vector<Value> values, String definition, String dependency,
-                           String dependencyValue, URL mapping) throws Exception {
+                           String dependencyValue) throws Exception {
       if (name.contains("/")) {
          throw new Exception("Property name must not be like a path!");
       }
@@ -270,7 +262,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
       setDefinition(definition);
       setDependency(dependency);
       setDependencyValue(dependencyValue);
-      setMapping(mapping);
    }
 
 
@@ -1072,11 +1063,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
          System.out.println("Property.merge error: cannot merge properties based with different data types!");
          return;
       }
-      if ((this.getMapping() != null && otherProperty.getMapping() != null)
-            && !this.getMapping().sameFile(otherProperty.getMapping())) {
-         System.out.println("Property.merge error: cannot merge properties mapping to different properties!");
-         return;
-      }
       if ((this.getDefinition() != null && otherProperty.getDefinition() != null)
             && !this.getDefinition().equalsIgnoreCase(otherProperty.getDefinition())) {
          System.out.println("Property.merge error: cannot merge properties having different nameDefinitions!");
@@ -1096,9 +1082,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
       }
       if (this.getUnit(0) == null) {
          this.setUnit(otherProperty.getUnit(0));
-      }
-      if (this.getMapping() == null) {
-         this.setMapping(otherProperty.getMapping());
       }
       if (this.getDependency() == null) {
          this.setDependency(otherProperty.getDependency());
@@ -1349,7 +1332,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
       propertyVector.add(definition);
       propertyVector.add(dependency);
       propertyVector.add(dependencyValue);
-      propertyVector.add(mappingURL);
       return propertyVector;
    }
 
@@ -1378,8 +1360,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
          propertyVector.add(definition);
          propertyVector.add(dependency);
          propertyVector.add(dependencyValue);
-         propertyVector.add(mappingURL);
-         return propertyVector;
+        return propertyVector;
       } catch (Exception e) {
          System.out.println(e.getMessage());
          return null;
@@ -1524,43 +1505,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
 
 
    /**
-    * Set the mapping of this {@link Property}. The mapping is specified 
-    * in form of an {@link URL} (e.g. http://portal.g-node-org/odml/terminologies/sectionType#newPoperty).
-    * The anchor part may be missing. In this case the property will be copied into a destination
-    * section of the specified type.
-    * 
-    * @param mappingURL an {@link URL} defining  
-    */
-   public void setMapping(URL mappingURL) {
-      this.mappingURL = mappingURL;
-   }
-
-
-   /**
-    * Sets the mapping information for this property.
-    *
-    * @param mappingURL a url defining the mapping of this property,
-    */
-   public void setMapping(String mappingURL) {
-      URL url = null;
-      try {
-         url = new URL(mappingURL);
-      } catch (MalformedURLException m) {
-         System.out.println("Property.setPropertyMapping: " + m.getMessage());
-      }
-      this.setMapping(url);
-   }
-
-
-   /**
-    * Removes the mapping information from this property. The parent mapping, however, is unaffected.
-    */
-   public void removePropertyMapping() {
-      this.mappingURL = null;
-   }
-
-
-   /**
     * Careful! Sets all units of this property (i.e. of all values) to the same content! Overwrites old content!
     *
     * @param unit {@link String} the new unit.
@@ -1571,16 +1515,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
          for (Value value : values) {
              value.setUnit(unit);
       }
-   }
-
-
-   /**
-    * Returns the mapping stored within this property.
-    *
-    * @return {@link URL} the mapping information related to this property or null if none found.
-    */
-   public URL getMapping() {
-      return this.mappingURL;
    }
 
 
@@ -2202,7 +2136,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
         result = prime * result + ((definition == null) ? 0 : definition.hashCode());
         result = prime * result + ((dependency == null) ? 0 : dependency.hashCode());
         result = prime * result + ((dependencyValue == null) ? 0 : dependencyValue.hashCode());
-        result = prime * result + ((mappingURL == null) ? 0 : mappingURL.hashCode());
         result = prime * result + ((name == null) ? 0 : name.hashCode());
         
         // cannot use parentSection - would cause infinite loop
@@ -2231,9 +2164,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
         if (dependencyValue == null) {
             if (other.dependencyValue != null) { return false; }
         } else if (!dependencyValue.equals(other.dependencyValue)) { return false; }
-        if (mappingURL == null) {
-            if (other.mappingURL != null) { return false; }
-        } else if (!mappingURL.equals(other.mappingURL)) { return false; }
         if (name == null) {
             if (other.name != null) { return false; }
         } else if (!name.equals(other.name)) { return false; }
@@ -2257,7 +2187,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
         for (Value value:values) _values.add(value.getMap());
         self.put("value", _values);
         self.put("definition", definition);
-        self.put("mapping", mappingURL);
         self.put("dependency", dependency);
         self.put("dependencyValue", dependencyValue);
         return self;

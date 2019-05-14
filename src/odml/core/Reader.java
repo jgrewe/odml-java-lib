@@ -14,7 +14,6 @@ package odml.core;
  * <a href="http://gnu.org/licenses">http://gnu.org/licenses</a>.
  */
 
-import odml.util.Mapper;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
@@ -211,12 +210,8 @@ public class Reader implements Serializable {
       if (option == LOAD_AND_RESOLVE || option == FULL_CONVERSION) {
          resolveLinks();
       }
-      if (option == FULL_CONVERSION) {
-         s = map();
-      } else {
-         s = this.getRootSection();
-      }
-      
+      s = this.getRootSection();
+
       return s;
    }
 
@@ -329,18 +324,9 @@ public class Reader implements Serializable {
       String name = domSection.getChildText("name");
       String reference = domSection.getChildText("reference");
       String definition = domSection.getChildText("definition");
-      URL mapURL = null;
-      String temp = domSection.getChildText("mapping");
-      if (temp != null && !temp.isEmpty()) {
-         try {
-            mapURL = new URL(temp);
-         } catch (Exception e) {
-            System.out.println("odml.core.Reader.parseSection.mappingURL handling: " + e.getMessage());
-         }
-      }
 
       URL url = null;
-      temp = domSection.getChildText("repository");
+      String temp = domSection.getChildText("repository");
       if (temp != null && !temp.isEmpty()) {
          try {
             url = new URL(domSection.getChildText("repository"));
@@ -356,7 +342,6 @@ public class Reader implements Serializable {
          section = new Section(name, type, reference);
          section.setDefinition(definition);
          section.setRepository(url);
-         section.setMapping(mapURL);
          section.setLink(link, true);
          if (link != null) {
             links.add(section);
@@ -394,18 +379,6 @@ public class Reader implements Serializable {
       String definition;
       URL mapURL = null;
 
-      String temp = domProperty.getChildText("mapping");
-
-      if (temp != null && !temp.isEmpty() && !temp.endsWith("?")) {
-         try {
-            mapURL = new URL(temp);
-         } catch (Exception e) {
-            System.out.println("odml.core.Reader.parseProperty.mappingURL handling: \n"
-                    + " \t> tried to form URL out of: '"
-                    + domProperty.getChildText("mapping")
-                    + "'\n\t= mapURL of Property named: " + name + e.getMessage());
-         }
-      }
       definition = domProperty.getChildText("definition");
       dependency = domProperty.getChildText("dependency");
       dependencyValue = domProperty.getChildText("dependencyValue");
@@ -416,7 +389,7 @@ public class Reader implements Serializable {
 
       Property property;
       try {
-         property = new Property(name, tmpValues, definition, dependency, dependencyValue, mapURL);
+         property = new Property(name, tmpValues, definition, dependency, dependencyValue);
       } catch (Exception e){
          System.out.println("odml.core.Reader.parseProperty: create new prop failed. " + e.getMessage());
          property = null;
@@ -509,17 +482,6 @@ public class Reader implements Serializable {
       for (Section include : includes) {
          include.loadInclude();
       }
-   }
-
-
-   /**
-    * Tries to apply the mappings, if there are any.
-    * 
-    * @throws Exception
-    */
-   public Section map() throws Exception {
-      Mapper m = new Mapper(root);
-      return m.map();
    }
 
 

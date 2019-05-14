@@ -50,7 +50,6 @@ public class Section extends Object implements Serializable, TreeNode {
    private String            include                    = null, author = null, version = null;
    private Date              date                       = null;
    private Section           parent, terminology = null;
-   private URL               mapping                    = null;
    protected int             level;
    private boolean           isTerminology              = false;
    protected Vector<Section> subsections = new Vector<Section>();
@@ -138,27 +137,6 @@ public class Section extends Object implements Serializable, TreeNode {
 
 
    /**
-    * 
-    * @param parent
-    *            {@link Section}: the parent of this section.
-    * @param name
-    *            {@link String}: the section name.
-    * @param type
-    *            {@link String}: the section type.
-    * @param definition
-    *            {@link String}: a description, can be null.
-    * @param baseURL
-    *            {@link URL}: the URL of the underlying terminology.
-    * @throws Exception
-    */
-   public Section(Section parent, String name, String type, String reference, String definition,
-                  URL baseURL)
-   throws Exception {
-      this(parent, name, type, reference, definition, baseURL, null);
-   }
-
-
-   /**
     * Constructor that creates a new section with all the possible information (name, description, terminology and
     * mappingURL. Also parentURLs (logical parent) and partenSections are included)
     * 
@@ -167,12 +145,9 @@ public class Section extends Object implements Serializable, TreeNode {
     *            {@link String}: the name of the Section, must not be null or empty
     * @param definition
     * @param repository
-    * @param mappingURL
     * @throws Exception
     */
-   public Section(Section parent, String name, String type, String reference, String definition,
-                  URL repository,
-                  URL mappingURL) throws Exception {
+   public Section(Section parent, String name, String type, String reference, String definition, URL repository) throws Exception {
       if (type == null) {
          throw new Exception("odml.core.SectionType must not be null!");
       }
@@ -187,7 +162,6 @@ public class Section extends Object implements Serializable, TreeNode {
       setReference(reference);
       setDefinition(definition);
       setRepository(repository);
-      setMapping(mappingURL);
       this.subsections = new Vector<Section>();
       this.properties = new Vector<Property>();
 
@@ -254,17 +228,7 @@ public class Section extends Object implements Serializable, TreeNode {
                     + "No changes applied. Please double check to avoid conflicts!");
          }
       }
-      if (this.terminology.getMapping() != null
-            && (!this.terminology.getMapping().toString().isEmpty())) {
-         if (this.getMapping() == null || (this.getMapping().toString().isEmpty())) {
-            this.setMapping(this.terminology.getMapping());
-            System.out.println("mappingURL set to one used in terminology");
-         } else if (!this.terminology.getMapping().toString().equalsIgnoreCase(
-               this.getMapping().toString())) {
-            System.out.println("Section mapping different from the one specified in terminology! "
-                    + "No changes applied. Please double check to avoid conflicts!");
-         }
-      }
+
       if (this.terminology.getRepository() != null
             && (!this.terminology.getRepository().toString().isEmpty())) {
          if (this.getRepository() == null
@@ -1259,11 +1223,6 @@ public class Section extends Object implements Serializable, TreeNode {
          System.out.println("Section.merge error: cannot merge sections based on different terminologies!");
          return;
       }
-      if ((this.getMapping() != null && otherSection.getMapping() != null)
-            && !this.mapping.sameFile(otherSection.getMapping())) {
-         System.out.println("Section.merge error: cannot merge sections mapping to different sections!");
-         return;
-      }
       for (int i = 0; i < otherSection.propertyCount(); i++) {
          Property temp = null;
          try {
@@ -1316,14 +1275,6 @@ public class Section extends Object implements Serializable, TreeNode {
             this.setDefinition(otherSection.getDefinition());
          } else if (mergeOption == MERGE_COMBINE && otherSection.getDefinition() != null) {
             this.setDefinition(this.definition + "\n" + otherSection.getDefinition());
-         }
-      }
-      // mappingURL
-      if (this.getMapping() == null) {
-         this.setMapping(otherSection.getMapping());
-      } else {
-         if (mergeOption == MERGE_OTHER_OVERRIDES_THIS && otherSection.getRepository() != null) {
-            this.setRepository(otherSection.getRepository());
          }
       }
    }
@@ -1492,53 +1443,6 @@ public class Section extends Object implements Serializable, TreeNode {
       copy.setParent(null);
       tempFile.delete();
       return copy;
-   }
-
-
-   /**
-    * Sets the mapping to the given one.
-    * 
-    * @param mapping
-    *            {@link URL}: the url to which this section maps. Can (should) contain references to indicate the type
-    *            of section to include.
-    */
-   public void setMapping(URL mapping) {
-      this.mapping = mapping;
-   }
-
-
-   /**
-    * Tries to convert the given mappingURL String to a valid URL and sets the internal mappingURL to it.
-    * 
-    * @param mapping
-    *            {@link String}: the url to which this property maps. Must not contain a refernce part.
-    */
-   public void setMapping(String mapping) {
-      URL url = null;
-      try {
-         url = new URL(mapping);
-      } catch (MalformedURLException m) {
-         System.out.println("getSectionMapping: " + m.getMessage());
-      }
-      this.setMapping(url);
-   }
-
-
-   /**
-    * Removes the mappingURL of this section.
-    */
-   public void removeMapping() {
-      this.mapping = null;
-   }
-
-
-   /**
-    * Returns the mappingURL of this section.
-    * 
-    * @return {@link URL} the mappingURL
-    */
-   public URL getMapping() {
-       return this.mapping;
    }
 
 
@@ -1777,7 +1681,7 @@ public class Section extends Object implements Serializable, TreeNode {
             + ") on level: " + level
             + "; full path: " + this.getPath() + "\n\t- ");
       info += ("definition: \t" + this.definition + "\n");
-      info += ("\n\t- repository: \t" + this.repositoryURL + "\n\t- mapping: \t" + this.mapping);
+      info += ("\n\t- repository: \t" + this.repositoryURL);
       info += ("\n\t- ");
       if (this.subsections != null && this.sectionCount() != 0 && this.getSections() != null) {
          info += (this.sectionCount() + " subsection(s) named: ");
@@ -2241,29 +2145,6 @@ public class Section extends Object implements Serializable, TreeNode {
 
 
    /**
-    * Returns whether the tree starting at this section contains mapping information that might need to be resolved.
-    * 
-    * @return {@link Boolean} true if mapping information is present, false otherwise.
-    */
-   public boolean containsMappings() {
-      if (this.mapping != null) {
-         return true;
-      }
-      for (int i = 0; i < propertyCount(); i++) {
-         if (getProperty(i).getMapping() != null) {
-            return true;
-         }
-      }
-      for (int i = 0; i < sectionCount(); i++) {
-         if (getSection(i).containsMappings()) {
-            return true;
-         }
-      }
-      return false;
-   }
-
-
-   /**
     * Returns whether this section was set to be a terminology. The default is false.
     * 
     * @return {@link Boolean}
@@ -2308,7 +2189,6 @@ public class Section extends Object implements Serializable, TreeNode {
         result = prime * result + (isTerminology ? 1231 : 1237);
         result = prime * result + level;
         result = prime * result + ((link == null) ? 0 : link.hashCode());
-        result = prime * result + ((mapping == null) ? 0 : mapping.hashCode());
         result = prime * result + ((name == null) ? 0 : name.hashCode());
         
         // cannot use parent - would cause infinite loop
@@ -2354,9 +2234,6 @@ public class Section extends Object implements Serializable, TreeNode {
         if (link == null) {
             if (other.link != null) { return false; }
         } else if (!link.equals(other.link)) { return false; }
-        if (mapping == null) {
-            if (other.mapping != null) { return false; }
-        } else if (!mapping.equals(other.mapping)) { return false; }
         if (name == null) {
             if (other.name != null) { return false; }
         } else if (!name.equals(other.name)) { return false; }
@@ -2400,7 +2277,6 @@ public class Section extends Object implements Serializable, TreeNode {
         self.put("link", link);
         self.put("include", include);
         self.put("repository", repositoryURL);
-        self.put("mapping", mapping);
         ArrayList<Map<String, Object>> _properties = new ArrayList<Map<String, Object>>();
         for(Property property:properties) _properties.add(property.getMap());
         self.put("property", _properties);

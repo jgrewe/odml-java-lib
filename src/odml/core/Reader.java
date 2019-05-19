@@ -412,11 +412,8 @@ public class Reader implements Serializable {
       String unit;
       Object uncertainty;
       String type;
-      String filename;
       String definition;
       String reference;
-      String encoder;
-      String checksum;
       content = domValue.getTextTrim();
       if (content == null) {
          content = "";
@@ -424,14 +421,10 @@ public class Reader implements Serializable {
       unit = domValue.getChildText("unit");
       uncertainty = domValue.getChildText("uncertainty");
       type = domValue.getChildText("type");
-      filename = domValue.getChildText("filename");
       definition = domValue.getChildText("definition");
       reference = domValue.getChildText("reference");
-      checksum = domValue.getChildText("checksum");
-      encoder = domValue.getChildText("encoder");
       try {
-         value = new Value(content, unit, uncertainty, type, filename, definition, reference,
-               encoder, checksum);
+         value = new Value(content, unit, uncertainty, type, definition, reference);
       } catch (Exception e) {
          System.out.println("odml.core.Reader.parseValue: create Value failed. " + e.getMessage());
          return null;

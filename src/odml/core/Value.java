@@ -1,9 +1,9 @@
 package odml.core;
 
 /************************************************************************
- *	odML - open metadata Markup Language - 
- * Copyright (C) 2009, 2010 Jan Grewe, Jan Benda 
- * 
+ *	odML - open metadata Markup Language -
+ * Copyright (C) 2009, 2010 Jan Grewe, Jan Benda
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the  GNU Lesser General Public License (LGPL) as published by
  * the Free Software Foundation; either version 3 of the License, or
@@ -13,20 +13,17 @@ package odml.core;
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this software.  If not, see <a href="http://gnu.org/licenses">http://gnu.org/licenses</a>.
  */
-import org.apache.commons.codec.binary.Base64;
 
 import javax.swing.tree.TreeNode;
 import java.io.*;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.zip.CRC32;
 
 /**
  * {@link Value} entities contain the values associated with a {@link Property}.
@@ -39,10 +36,8 @@ import java.util.zip.CRC32;
  * <li>filename - optional, the default file name which should be used when saving the object.</li>
  * <li>definition - optional, here additional comments on the value of the property can be given.</li>
  * <li>reference - optional, here additional comments on the value of the property can be given.</li>
- * <li>encoder - optional. If binary content is included in the {@link Value}, indicate the encoder used in the form.</li>
- * <li>checksum - optional. The checksum of the file included in the {@link Value}. State the checksum in the form algorithm$checksum (e.g. crc32$...).</li>
- * </ol> 
- *   
+ * </ol>
+ *
  * @since 06.2010
  * @author Jan Grewe, Christine Seitz
  *
@@ -52,7 +47,7 @@ public class Value implements Serializable, Cloneable, TreeNode {
    private static final long             serialVersionUID = 147L;
    private String                        unit             = null, type = null, reference = null;
    private Object                        content, uncertainty;
-   private String                        definition, filename, checksum, encoder;
+   private String                        definition, filename;
    private Property                      parent;
    private final static SimpleDateFormat dateFormat       = new SimpleDateFormat("yyyy-MM-dd");
    private final static SimpleDateFormat datetimeFormat   = new SimpleDateFormat(
@@ -100,21 +95,20 @@ public class Value implements Serializable, Cloneable, TreeNode {
     * @throws Exception
     */
    protected Value(Object content, String unit, Object uncertainty, String type) throws Exception {
-      this(content, unit, uncertainty, type, null, null, null);
+      this(content, unit, uncertainty, type, null, null);
    }
 
 
    /**
     * Creates a Value from a Vector containing the value data in the following sequence:
-    * "content","unit","uncertainty","type","fileName","definition","reference"
+    * "content","unit","uncertainty","type","definition","reference"
     *
     * @param data {@link Vector} of Objects that contains the data in the sequence as the {@link Value}
-    * @throws Exception 
+    * @throws Exception
     */
    protected Value(Vector<Object> data) throws Exception {
       this(data.get(0), (String) data.get(1), data.get(2), (String) data.get(3), (String) data
-            .get(4), (String) data.get(5),
-            (String) data.get(6));
+            .get(4), (String) data.get(5));
    }
 
 
@@ -126,42 +120,20 @@ public class Value implements Serializable, Cloneable, TreeNode {
     * @param unit The value's unit, if applicable.
     * @param uncertainty The value's uncertainty, if any
     * @param type The values data type.
-    * @param filename In case of binary content the original file name.
     * @param definition A textual definition of the value.
     * @param reference If the value references an external entity, its url goes here.
     * @throws Exception
     */
-   protected Value(Object content, String unit, Object uncertainty, String type, String filename,
+   protected Value(Object content, String unit, Object uncertainty, String type,
                    String definition, String reference) throws Exception {
-      this(content, unit, uncertainty, type, filename, definition, reference, "", "");
-   }
-
-
-   protected Value(Object content, String unit, Object uncertainty, String type, String filename,
-                   String definition, String reference, String encoder) throws Exception {
-      this(content, unit, uncertainty, type, filename, definition, reference, encoder, "");
-   }
-
-
-   protected Value(Object content, String unit, Object uncertainty, String type, String filename,
-                   String definition, String reference, String encoder, String checksum)
-                                                                                        throws Exception {
       if (type == null || type.isEmpty()) {
          type = inferOdmlType(content);
       }
       this.content = null;
       this.uncertainty = null;
-      this.filename = "";
       this.definition = "";
       this.reference = "";
-      this.checksum = "";
-      this.encoder = "";
       this.type = type;
-      if (type.equalsIgnoreCase("binary")) {
-         this.content = encodeContent(content);
-      } else {
-         this.content = checkDatatype(content, type);
-      }
       if (uncertainty == null) {
          this.uncertainty = "";
       } else {
@@ -171,9 +143,6 @@ public class Value implements Serializable, Cloneable, TreeNode {
             this.uncertainty = "";
             System.out.println(e.getMessage());
          }
-      }
-      if (filename != null && !filename.isEmpty()) {
-         this.filename = filename;
       }
       if (definition == null) {
          this.definition = "";
@@ -220,8 +189,6 @@ public class Value implements Serializable, Cloneable, TreeNode {
          return "float";
       } else if (value instanceof URL) {
          return "url";
-      } else if (value instanceof File) {
-         return "binary";
       } else if (value instanceof String) {
          return inferDatatypeFromString(value.toString());
       }
@@ -371,26 +338,15 @@ public class Value implements Serializable, Cloneable, TreeNode {
                return null;
             }
          } else {
-            if (type.matches("(?i)binary")) {
-               if (content instanceof String || content instanceof File
-                       || content instanceof URL || content instanceof URI) {
-                  return content;
-               } else {
-                  System.out.println("Binary (String), File, URL, or URI content expected, "
-                          + content.getClass().getSimpleName() + " found!");
-                  return null;
-               }
+            if (type.matches("(?i)person")) {
+                if (!(content instanceof String)) {
+                    System.out.println("Expect a person to be of class expected, not " + content.getClass());
+                    return null;
+                } else {
+                    return content;
+                }
             } else {
-               if (type.matches("(?i)person")) {
-                  if (!(content instanceof String)) {
-                     System.out.println("Expect a person to be of class expected, not " + content.getClass());
-                     return null;
-                  } else {
-                     return content;
-                  }
-               } else {
-                  return content;
-               }
+                return content;
             }
          }
       }
@@ -400,7 +356,7 @@ public class Value implements Serializable, Cloneable, TreeNode {
 
    /**
     * Checks a {@link String} in more detail, and returns the odml data type.
-    * 
+    *
     * @param content {@link String}
     * @return {@link String}: the odml type that matches best.
     */
@@ -421,64 +377,6 @@ public class Value implements Serializable, Cloneable, TreeNode {
             return key;
       }
       return "string";
-   }
-
-
-   //***************************************************************************************
-   //*****					methods to handle binary content					**********
-   //***************************************************************************************
-   /**
-    * Function to convert the content of the indicated file to an array of bytes.
-    * Is primarily for internal use to Base64 encode binary data. 
-    * @param file {@link File}: the file to convert.
-    * @return byte[]: the array of bytes contained in the file.
-    * @throws IOException
-    */
-   public static byte[] getBytesFromFile(File file) throws IOException {
-      InputStream in = new FileInputStream(file);
-      long length = file.length();
-      if (length > Integer.MAX_VALUE) {
-         throw new IOException("File exceeds max value: " + Integer.MAX_VALUE);
-      }
-      //Create the byte array to hold the data
-      byte[] bytes = new byte[(int) length];
-      //Read in the bytes
-      int offset = 0;
-      int numRead;
-      while (offset < bytes.length &&
-            (numRead = in.read(bytes, offset, bytes.length - offset)) >= 0) {
-         offset += numRead;
-      }
-      //Ensure all the bytes have been read
-      if (offset < bytes.length) {
-         throw new IOException("Could not completely read file" + file.getName());
-      }
-      in.close();
-      return bytes;
-   }
-
-
-   /**
-    * Writes the value content which is Base64 encoded to disc.
-    * @param content {@link String}: the value content.
-    * @param outFile {@link File}: the File into which the decoded content should be written
-    */
-   public static void writeBinaryToDisc(String content, File outFile) throws Exception {
-      if (outFile == null) {
-         throw new Exception("Argument outFile not specified!");
-      }
-      FileOutputStream os;
-      try {
-         os = new FileOutputStream(outFile);
-      } catch (Exception e) {
-         System.out.println(e.getMessage());
-         throw e;
-      }
-      Base64 base = new Base64();
-      byte[] bytes = base.decode(content.getBytes("UTF-8"));
-      os.write(bytes);
-      os.flush();
-      os.close();
    }
 
 
@@ -527,16 +425,6 @@ public class Value implements Serializable, Cloneable, TreeNode {
    }
 
 
-   protected void setFilename(String filename) {
-      this.filename = filename;
-   }
-
-
-   protected String getFilename() {
-      return this.filename;
-   }
-
-
    protected void setDefinition(String comment) {
       this.definition = comment;
    }
@@ -557,38 +445,12 @@ public class Value implements Serializable, Cloneable, TreeNode {
    }
 
 
-   protected void setEncoder(String encoder) {
-      if (encoder == null || encoder.isEmpty())
-         this.encoder = "";
-      else
-         this.encoder = encoder;
-   }
-
-
-   protected String getEncoder() {
-      return this.encoder;
-   }
-
-
-   protected void setChecksum(String checksum) {
-      if (checksum == null || checksum.isEmpty())
-         this.checksum = "";
-      else
-         this.checksum = checksum;
-   }
-
-
-   protected String getChecksum() {
-      return this.checksum;
-   }
-
-
    /**
     * Validates this {@link Value} against the terminology definition.
     * This function is marked @deprecated and will be removed in future versions!
-    * 
+    *
     * Use validate instead!
-    * 
+    *
     * @param termProp Property: The definition retrieved from a terminology.
     */
    @Deprecated
@@ -598,11 +460,11 @@ public class Value implements Serializable, Cloneable, TreeNode {
 
 
    /**
-    * Validates a {@link Value} against the value definition in a terminology. 
-    * 
-    * @param terminologyProperty {@link Property}: The respective {@link Property} 
+    * Validates a {@link Value} against the value definition in a terminology.
+    *
+    * @param terminologyProperty {@link Property}: The respective {@link Property}
     * that defines the kind of value.
-    * 
+    *
     */
    public void validate(Property terminologyProperty) {
       if (this.type != null && !this.type.isEmpty()) {
@@ -648,68 +510,6 @@ public class Value implements Serializable, Cloneable, TreeNode {
     */
    public boolean isEqual(Value other) {
       return this.content.toString().equals(other.content.toString());
-   }
-
-
-   /**
-    * Base64 encodes the content if it represents either a File, URL, URI, or String that can be converted to a file.
-    *
-    * @param content - the content that should be encoded.
-    * @return encoded content as {@link String}
-    */
-   private String encodeContent(Object content) {
-      if (content == null) {
-         return null;
-      }
-      System.out.println("Encoding content: " + content.toString());
-      String encoded = null;
-      File file;
-      if (content instanceof String) {
-         try {
-            URI uri = new URI((String) content);
-            file = new File(uri);
-         } catch (Exception e) {
-            return (String) content;
-         }
-      } else if (content instanceof URL) {
-         try {
-            file = new File(((URL) content).toURI());
-         } catch (Exception e) {
-            System.out.println("Could not create a file from the specified URL: " + content.toString());
-            file = null;
-         }
-      } else if (content instanceof URI) {
-         try {
-            file = new File((URI) content);
-         } catch (Exception e) {
-            System.out.println("Could not create a file from the specified URI: " + content.toString());
-            file = null;
-         }
-      } else if (content instanceof File) {
-         file = (File) content;
-      } else {
-         System.out.println("Could not create a File from input! Class: "
-                 + content.getClass().getSimpleName() + " Content: " + content.toString());
-         file = null;
-      }
-      if (file == null) {
-         return "";
-      }
-      Base64 enc = new Base64();
-      //the value has to be converted to String; if it is already just take it, if it is not
-      //try different things 
-      try {
-         byte[] bytes = enc.encode(getBytesFromFile(file));
-         CRC32 crc = new CRC32();
-         crc.update(bytes);
-         this.setChecksum("CRC32$" + crc.getValue());
-         this.setFilename(file.getName());
-         this.setEncoder("Base64");
-         encoded = new String(bytes, "UTF-8");
-      } catch (Exception e) {
-         System.out.println("An error occurred during encoding: " + e.getLocalizedMessage());
-      }
-      return encoded;
    }
 
 
@@ -771,8 +571,8 @@ public class Value implements Serializable, Cloneable, TreeNode {
    }
 
 
-   
-   
+
+
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
@@ -780,23 +580,18 @@ public class Value implements Serializable, Cloneable, TreeNode {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((checksum == null) ? 0 : checksum.hashCode());
         result = prime * result + ((content == null) ? 0 : content.hashCode());
         result = prime * result + ((definition == null) ? 0 : definition.hashCode());
-        result = prime * result + ((encoder == null) ? 0 : encoder.hashCode());
-        result = prime * result + ((filename == null) ? 0 : filename.hashCode());
-        
         // cannot use parent - would cause infinite loop
         //result = prime * result + ((parent == null) ? 0 : parent.hashCode());
-        
         result = prime * result + ((reference == null) ? 0 : reference.hashCode());
         result = prime * result + ((type == null) ? 0 : type.hashCode());
         result = prime * result + ((uncertainty == null) ? 0 : uncertainty.hashCode());
         result = prime * result + ((unit == null) ? 0 : unit.hashCode());
         return result;
     }
-    
-    
+
+
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
@@ -806,27 +601,17 @@ public class Value implements Serializable, Cloneable, TreeNode {
         if (obj == null) { return false; }
         if (getClass() != obj.getClass()) { return false; }
         Value other = (Value) obj;
-        if (checksum == null) {
-            if (other.checksum != null) { return false; }
-        } else if (!checksum.equals(other.checksum)) { return false; }
         if (content == null) {
             if (other.content != null) { return false; }
         } else if (!content.equals(other.content)) { return false; }
         if (definition == null) {
             if (other.definition != null) { return false; }
         } else if (!definition.equals(other.definition)) { return false; }
-        if (encoder == null) {
-            if (other.encoder != null) { return false; }
-        } else if (!encoder.equals(other.encoder)) { return false; }
-        if (filename == null) {
-            if (other.filename != null) { return false; }
-        } else if (!filename.equals(other.filename)) { return false; }
-        
         // cannot use parent - would cause infinite loop
         /*if (parent == null) {
             if (other.parent != null) { return false; }
         } else if (!parent.equals(other.parent)) { return false; }*/
-        
+
         if (reference == null) {
             if (other.reference != null) { return false; }
         } else if (!reference.equals(other.reference)) { return false; }
@@ -850,9 +635,6 @@ public class Value implements Serializable, Cloneable, TreeNode {
         self.put("unit", unit);
         self.put("reference", reference);
         self.put("definition", definition);
-        self.put("filename", filename);
-        self.put("encoder", encoder);
-        self.put("checksum", checksum);
         return self;
     }
 }

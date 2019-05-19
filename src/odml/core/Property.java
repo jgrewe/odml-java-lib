@@ -1201,10 +1201,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
                this.setValueUncertaintyAt(otherProperty.getValueUncertainty(otherValueIndex),
                      thisValueIndex);
             }
-            if (this.getValueFilename(thisValueIndex) == null) {
-               this.setValueFilenameAt(otherProperty.getValueFilename(otherValueIndex),
-                     thisValueIndex);
-            }
             if (this.getValueReference(thisValueIndex) == null) {
                this.setValueReferenceAt(otherProperty.getValueReference(otherValueIndex),
                      thisValueIndex);
@@ -1223,13 +1219,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
                      thisValueIndex);
             } else if (otherProperty.getValueUncertainty(otherValueIndex) != null) {
                this.setValueUncertaintyAt(otherProperty.getValueUncertainty(otherValueIndex),
-                     thisValueIndex);
-            }
-            if (this.getValueFilename(thisValueIndex) == null) {
-               this.setValueFilenameAt(otherProperty.getValueFilename(otherValueIndex),
-                     thisValueIndex);
-            } else if (otherProperty.getValueFilename(otherValueIndex) != null) {
-               this.setValueFilenameAt(otherProperty.getValueFilename(otherValueIndex),
                      thisValueIndex);
             }
             if (this.getValueReference(thisValueIndex) == null) {
@@ -1251,10 +1240,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
             if (this.getValueUncertainty(thisValueIndex) == null) {
                this.setValueUncertaintyAt(otherProperty.getValueUncertainty(otherValueIndex),
                      thisValueIndex);
-            }
-            if (this.getValueFilename(thisValueIndex) == null) {
-               this.setValueFilenameAt(otherProperty.getValueFilename(otherValueIndex),
-                           thisValueIndex);
             }
             if (this.getValueReference(thisValueIndex) == null) {
                this.setValueReferenceAt(otherProperty.getValueReference(otherValueIndex),
@@ -1483,28 +1468,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
 
 
    /**
-    * Returns the encoder of the first value. 
-    * @return a {@link String} indicating the encoder or empty string.  
-    */
-   public String getValueEncoder() {
-      return getValueEncoder(0);
-   }
-
-
-   /**
-    * Returns the encoder of the value specfied by the index.
-    * @param index int.
-    * @return a {@link String} indicating the encoder or empty string.
-    */
-   public String getValueEncoder(int index) {
-      if (index > -1 && index < valueCount())
-         return getWholeValue(index).getEncoder();
-      else
-         return "";
-   }
-
-
-   /**
     * Careful! Sets all units of this property (i.e. of all values) to the same content! Overwrites old content!
     *
     * @param unit {@link String} the new unit.
@@ -1588,232 +1551,9 @@ public class Property implements Serializable, Cloneable, TreeNode {
    }
 
 
-   /**
-    * Sets the value mime type of this property.
-    *
-    * @param filename {@link String}: the definition.
-    * @return {@link Boolean} true if operation succeeded, false if there is more than a single value stored in this
-    * property.
-    */
-   @Deprecated
-   public boolean setDefaultFileName(String filename) {
-      return setValueFilename(filename);
-   }
-
 
    /**
-    * Sets filename associated with the first value of this property.
-    *
-    * Function is marked @deprecated and will be removed.
-    * 
-    * @param filename {@link String}: The filename.
-    * @return {@link Boolean} true if operation succeeded, false if there is more than a single value stored in this
-    * property.
-    */
-   @Deprecated
-   public boolean setFilename(String filename) {
-      return setValueFilenameAt(filename, 0);
-   }
-
-
-   /**
-    * Sets filename associated with the first value of this property.
-    *
-    * @param filename {@link String}: The filename.
-    * @return {@link Boolean} true if operation succeeded, false if there is more than a single value stored in this
-    * property.
-    */
-   public boolean setValueFilename(String filename) {
-      return setValueFilenameAt(filename, 0);
-   }
-
-
-   /**
-    * Set the value filename of a value specified by its index. Overwrites old information.
-    *
-    * @param filename {@link String}: the default file name which should be used when saving the object.
-    * @param index {@link Integer}: the index of the value to which the filename belongs.
-    * @return {@link Boolean}: true if new name was set, false if index out of bounds.
-    * 
-    * Function marked as @deprecated use setValueFilenameAt instead
-    */
-   @Deprecated
-   public boolean setDefaultFileNameAt(String filename, int index) {
-      if (this.values.size() <= index || index < 0) {
-         System.out.println("! index of value for setting filename out of range!");
-         return false;
-      }
-      if (!this.values.get(0).getType().equalsIgnoreCase("binary")) {
-         System.out.println("! type of property must be binary if filename shall be set!");
-         return false;
-      }
-      this.values.get(index).setFilename(filename);
-      return true;
-   }
-
-
-   /**
-    * Set the filename associated with the binary content of value specified by index. 
-    * Overwrites old information.
-    *
-    * @param filename {@link String}: the default file name which should be used when saving the object.
-    * @param index {@link Integer}: the index of the value to which the filename belongs.
-    * @return {@link Boolean}: true if new name was set, false if index out of bounds.
-    * 
-    */
-   public boolean setValueFilenameAt(String filename, int index) {
-      if (this.values.size() <= index || index < 0) {
-         System.out.println("! index of value for setting filename out of range!");
-         return false;
-      }
-      if (!this.values.get(0).getType().equalsIgnoreCase("binary")) {
-         System.out.println("! type of property must be binary if filename shall be set!");
-         return false;
-      }
-      this.values.get(index).setFilename(filename);
-      return true;
-   }
-
-
-   /**
-    * Function to convert the content of the indicated file to an array of bytes. Is primarily for internal use to
-    * Base64 encode binary data.
-    *
-    * @param file {@link File}: the file to convert.
-    * @return byte[]: the array of bytes contained in the file.
-    * @throws IOException
-    */
-   public static byte[] getBytesFromFile(File file) throws IOException {
-      return Value.getBytesFromFile(file);
-   }
-
-
-   /**
-    * Writes the value of this property (if of type binary) to disc. In case there is more than one value stored, the
-    * first is written to disc.
-    *
-    * @param filename {@link String}: the full path of the new file.
-    */
-   public void writeBinaryToDisc(String filename) throws Exception {
-      File outFile = new File(filename);
-      if (outFile.isDirectory()) {
-         if (values.get(0).getFilename().isEmpty()) {
-            throw new Exception(
-                  "Property does not define a default file name. Please provide a full file name.");
-         }
-         outFile = new File(filename + values.get(0).getFilename());
-      }
-      writeBinary(outFile, 0);
-   }
-
-
-   /**
-    * Writes the identified value of this property (if of type binary) to disc.
-    *
-    * @param filename {@link String}: the full path of the new file.
-    * @param index {@link Integer}: the value index.
-    */
-   public void writeBinaryToDisc(String filename, int index) {
-      try {
-         File outFile = new File(filename);
-         writeBinary(outFile, index);
-      } catch (Exception e) {
-         System.out.println("could not create File from string: " + filename + e.getMessage());
-      }
-   }
-
-
-   /**
-    * Writes the value of this property (if of type binary) to disc. In case there is more than one value stored, the
-    * first is written to disc.
-    *
-    * @param fileUrl {@link URL}: the URL of the file.
-    */
-   public void writeBinaryToDisc(URL fileUrl) {
-      try {
-         File outFile = new File(fileUrl.toURI());
-         writeBinary(outFile, 0);
-      } catch (Exception e) {
-         System.out.println("could not create File from URL: " + fileUrl + e.getMessage());
-      }
-   }
-
-
-   /**
-    * Writes the identified value of this property (if of type binary) to disc.
-    *
-    * @param fileUrl {@link URL}: the URL of the file.
-    * @param index {@link Integer}: the value index.
-    */
-   public void writeBinaryToDisc(URL fileUrl, int index) {
-      try {
-         File outFile = new File(fileUrl.toURI());
-         writeBinary(outFile, index);
-      } catch (Exception e) {
-         System.out.println("could not create File from URL: " + fileUrl + e.getMessage());
-      }
-   }
-
-
-   /**
-    * Writes the value of this property (if of type binary) to disc. In case there is more than one value stored, the
-    * first is written to disc.
-    *
-    * @param fileUri {@link URI}: THe file URI.
-    */
-   public void writeBinaryToDisc(URI fileUri) {
-      try {
-         File outFile = new File(fileUri);
-         writeBinary(outFile, 0);
-      } catch (Exception e) {
-         System.out.println("could not create File from the specified URI: " + fileUri + e.getMessage());
-      }
-   }
-
-
-   /**
-    * Write the content of the given property value to disc
-    *
-    * @param fileUri {@link URI}: THe file URI.
-    * @param index {@link Integer}: the value index.
-    */
-   public void writeBinaryToDisc(URI fileUri, int index) {
-      try {
-         File outFile = new File(fileUri);
-         writeBinary(outFile, index);
-      } catch (Exception e) {
-         System.out.println("could not create File from the specified URI: " + fileUri + e.getMessage());
-      }
-   }
-
-
-   /**
-    * Write the property content to disc. Function calls public method writeBinaryToDisc.
-    *
-    * @param outFile {@link File}: the File to which the content has to be written.
-    * @param index {@link Integer}: the index of the value.
-    */
-   private void writeBinary(File outFile, int index) throws Exception {
-      if (!this.values.get(0).getType().equalsIgnoreCase("binary")) {
-         System.out.println("Property value is not of type binary!");
-         return;
-      }
-      if (index < 0) {
-         System.out.println("!index specified for writing value to disc out of range!");
-         return;
-      } else if (index > values.size() - 1) {
-         System.out.println("!index specified for writing value to disc out of range!");
-         return;
-      }
-      if (outFile.exists()) {
-         throw new Exception("File already exists please provide a different file name.");
-      }
-      Value.writeBinaryToDisc(values.get(index).getContent().toString(), outFile);
-   }
-
-
-   /**
-    * Returns a String representation of this section. I.e the fact that it is a section and it's name.
+    * Returns a String representation of this property.
     */
    @Override
    public String toString() {
@@ -1822,8 +1562,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
 
 
    /**
-    * Returns an extended String representation of this section. I.e it's name, level, completePath, number and names
-    * of subsections and number and names of appended properties
+    * Returns an extended String representation of this Property. I.e it's name, level, completePath, parent Section
     */
    public String toStringExtended() {
       String info = ("property '" + this.name + "'; completePath: ");

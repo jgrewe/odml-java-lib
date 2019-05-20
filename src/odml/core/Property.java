@@ -173,8 +173,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
          type = Value.inferOdmlType(value);
       }
       try {
-         theValues.add(new Value(value, unit, uncertainty, type, filename,
-               valueDefinition, reference));
+         theValues.add(new Value(value, unit, uncertainty, type, valueDefinition, reference));
          initialize(name, theValues, definition, dependency, dependencyValue);
       } catch (Exception l) {
          System.out.println("Could not create property: " + l.getLocalizedMessage());
@@ -227,8 +226,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
             tmpReference = references.get(i);
 
          try {
-            Value value = new Value(values.get(i), unit, tmpUncertainty, type,
-                  tmpFileNames, definition, tmpReference);
+            Value value = new Value(values.get(i), unit, tmpUncertainty, type, definition, tmpReference);
             theValues.add(value);
          } catch (Exception e) {
             System.out.println("Error during creation of value: " + e.getLocalizedMessage());
@@ -513,7 +511,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
          if (unit == null && this.valueCount() > 0) {
             unit = this.getUnit(0);
          }
-         Value toAdd = new Value(value, unit, uncertainty, type, filename, comment, id);
+         Value toAdd = new Value(value, unit, uncertainty, type, comment, id);
          toAdd.setAssociatedProperty(this);
          if (values.contains(toAdd)) {
             System.out.println("! value to add already existing in property!");
@@ -1106,9 +1104,7 @@ public class Property implements Serializable, Cloneable, TreeNode {
          } else {
             if (mergeOption == Section.MERGE_COMBINE) {
                this.addValue(otherProperty.getValue(i), otherProperty.getValueReference(i),
-                     otherProperty
-                           .getValueUncertainty(i), otherProperty.getValueFilename(i), otherProperty
-                           .getValueDefinition(i));
+                     otherProperty.getValueUncertainty(i), otherProperty.getValueDefinition(i));
             } else if (mergeOption == Section.MERGE_OTHER_OVERRIDES_THIS && this.valueCount() == 1) {
                setValueAt(otherProperty.getValue(), i);
                mergeValue(this.values.indexOf(otherProperty.getWholeValue(i)), otherProperty, i,
@@ -1312,7 +1308,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
       propertyVector.add(values.get(0).getUncertainty());
       propertyVector.add(values.get(0).getUnit());
       propertyVector.add(values.get(0).getType());
-      propertyVector.add(values.get(0).getFilename());
       propertyVector.add(values.get(0).getDefinition());
       propertyVector.add(definition);
       propertyVector.add(dependency);
@@ -1340,7 +1335,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
          propertyVector.add(values.get(index).getUncertainty());
          propertyVector.add(values.get(index).getUnit());
          propertyVector.add(values.get(index).getType());
-         propertyVector.add(values.get(index).getFilename());
          propertyVector.add(values.get(index).getDefinition());
          propertyVector.add(definition);
          propertyVector.add(dependency);
@@ -1387,83 +1381,6 @@ public class Property implements Serializable, Cloneable, TreeNode {
     */
    public String getType() {
       return this.values.get(0).getType();
-   }
-
-
-   /**
-    * Function is marked @deprecated and will be removed. Use getValueFilename() instead!   
-    */
-   @Deprecated
-   public String getFilename() {
-      return getValueFilename(0);
-   }
-
-
-   /**
-    * Function is marked @deprecated and will be removed. Use getValueFilename(int index) instead!   
-    */
-   @Deprecated
-   public String getFilename(int index) {
-      return getValueFilename(index);
-   }
-
-
-   /**
-    * Returns the mimetype of the property. Only working if not more than one value existing!
-    *
-    * @return {@link String}: returns the mime type of a certain property. Returns an empty String if no mime type
-    * stored or null if the index is out of range.
-    */
-   public String getValueFilename() {
-      if (values.size() > 1) {
-         System.out.println("! property has more than one value > index for returning filename must be specified");
-         return null;
-      }
-      return getValueFilename(0);
-   }
-
-
-   /**
-    * Returns the filename information stored in the specified value defined by the index.
-    *
-    * @param index {@link Integer}: the index to specify which filename shall be returned (i.e. from which value)
-    * @return {@link String}: the filename or null if empty.
-    */
-   public String getValueFilename(int index) {
-      try {
-         String filename = this.values.get(index).getFilename();
-         if (filename != null && filename.isEmpty()) {
-            return null;
-         }
-         return filename;
-      } catch (Exception e) {
-         System.out.println(e.getMessage());
-         return null;
-      }
-   }
-
-
-   /**
-    * Returns the checksum of the first value stored in this property.
-    * 
-    * @return String the checksum or null if no checksum is stored or index out of bounds.
-    */
-   public String getValueChecksum() {
-      return getValueChecksum(0);
-   }
-
-
-   /**
-    * Returns the checksum stored in the specified value.
-    * 
-    * @param index int: the index of the value.
-    * @return String the checksum or null if no checksum is stored or index out of bounds.
-    */
-   public String getValueChecksum(int index) {
-      if (index > -1 && index < valueCount())
-         return getWholeValue(index).getChecksum();
-      else
-         return null;
    }
 
 

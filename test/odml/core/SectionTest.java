@@ -5,15 +5,33 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
 
 public class SectionTest {
     @Test
     public void testCheckTypeStyle() throws Exception {
+        String type = "section type";
+        String type2 = "1st section";
+        String type3 = "3rd Section";
+        String type4 = "secondSection";
+        String type5 = "SecondSection";
+
+        Assert.assertFalse(Section.checkTypeStyle(type).contains(" "));
+        Assert.assertEquals(Section.checkTypeStyle(type2), "s_1st_section");
+        Assert.assertEquals(Section.checkTypeStyle(type3), "s_3rd_section");
+        Assert.assertEquals(Section.checkTypeStyle(type4), type4);
+        Assert.assertEquals(Section.checkTypeStyle(type5), type5);
     }
 
     @Test
     public void testCheckNameStyle() throws Exception {
+        String valid = "valid_section_name";
+        String temp = Section.checkNameStyle(valid);
+        Assert.assertEquals(valid, temp);
+
+        String invalid = "invalid/section/name";
+        temp = Section.checkNameStyle(invalid);
+        Assert.assertNotEquals(invalid, temp);
+        Assert.assertFalse(temp.contains("/"));
     }
 
     @Test
@@ -463,7 +481,6 @@ public class SectionTest {
         for (int i = 0; i < 10; i++)
             this.section.addProperty("test_" + i, 100.0);
         Assert.assertEquals(this.section.propertyCount(), 10);
-        System.out.println(this.section.getProperty(0).getName());
 
         for (int i = this.section.propertyCount() - 1; i >= 0; i--)
             this.section.removeProperty(i);

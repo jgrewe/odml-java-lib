@@ -175,13 +175,13 @@ public class Section extends Object implements Serializable, TreeNode {
 
 
     /**
-     * Checks whether the given section type is in lower case, i.e. having one word beginning with an uppercase letter.
-     * If not generating CamelCase by deleting white-spaces and putting letter of formerly new word to uppercase. If
-     * String is beginning with a digit adding S_ for indicating a Section-type
+     * Checks whether the given section type. Section types must start with an
+     * alphabetic character and must not contain blanks.
+     * Blanks are replaced by a an underscore, if the type starts with a non-alphabetic
+     * character, a 's_' prefix is added.
      *
-     * @param type
-     *            {@link String}: the type that shall be checked / converted to CamelCase
-     * @return {@link String}: returning the checked / converted type-String in CamelCase
+     * @param type {@link String}: the type that shall be checked, converted
+     * @return {@link String}: returning the checked, converted
      */
     public static String checkTypeStyle(String type) {
         type = type.trim();
@@ -199,15 +199,13 @@ public class Section extends Object implements Serializable, TreeNode {
     /**
      * Checks the name style of a section. Names must not contain '/'. Is replaced by '-'
      *
-     * @param name
-     *            {@link String} the name.
+     * @param name {@link String} the name.
      * @return String the converted (if needed) name.
      */
     public static String checkNameStyle(String name) {
         name = name.trim();
         while (name.contains("/")) {
             name = name.replace("/", "-");
-            System.out.println("Invalid section name:\treplacing slashes '/' by '-'");
         }
         return name;
     }
